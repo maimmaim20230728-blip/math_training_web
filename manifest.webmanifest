@@ -1,0 +1,21 @@
+{
+  "name": "算数・数学 やさしくトレーニング",
+  "short_name": "算数数学トレ",
+  "description": "小学校の算数6段階と中学校の数学3段階を、4択クイズと解説で学び直せるオフライン対応アプリ",
+  "lang": "ja",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#eef7f5",
+  "theme_color": "#00897b",
+  "categories": ["education"],
+  "icons": [
+    {
+      "src": "icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

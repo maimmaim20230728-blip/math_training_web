@@ -1,0 +1,43 @@
+<svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#26a69a"/>
+      <stop offset="1" stop-color="#00695c"/>
+    </linearGradient>
+    <linearGradient id="sym" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#e0f2f1"/>
+    </linearGradient>
+  </defs>
+
+  <!-- 背景(ティール) -->
+  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
+
+  <!-- ノートの罫線(ごく薄く) -->
+  <g stroke="#ffffff" stroke-width="10" stroke-linecap="round" fill="none" opacity="0.12">
+    <path d="M96 78 H416"/>
+    <path d="M96 434 H416"/>
+  </g>
+
+  <!-- 4記号を2×2に配置(文字を使わず図形だけで描く) -->
+  <!-- 左上 ＋ -->
+  <g fill="url(#sym)">
+    <rect x="116" y="159" width="108" height="22" rx="11"/>
+    <rect x="159" y="116" width="22" height="108" rx="11"/>
+  </g>
+  <!-- 右上 − -->
+  <g fill="url(#sym)">
+    <rect x="288" y="159" width="108" height="22" rx="11"/>
+  </g>
+  <!-- 左下 ×(45度回転の2本) -->
+  <g fill="url(#sym)">
+    <rect x="116" y="331" width="108" height="22" rx="11" transform="rotate(45 170 342)"/>
+    <rect x="116" y="331" width="108" height="22" rx="11" transform="rotate(-45 170 342)"/>
+  </g>
+  <!-- 右下 ÷(琥珀の差し色) -->
+  <g fill="#f2a73b">
+    <rect x="288" y="331" width="108" height="22" rx="11"/>
+    <circle cx="342" cy="302" r="16"/>
+    <circle cx="342" cy="382" r="16"/>
+  </g>
+</svg>
