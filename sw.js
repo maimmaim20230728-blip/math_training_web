@@ -3,7 +3,7 @@
  * cache-first。中身を更新したら CACHE の数字を上げてください（例 v1 -> v2）。
  * 図(figure)は問題データに埋め込まれているので、data の9本を入れれば全てオフラインで動く。
  */
-var CACHE = "mathtr-v1";
+var CACHE = "mathtr-v2";
 var ASSETS = [
   "./",
   "./index.html",

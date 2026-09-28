@@ -115,7 +115,7 @@
   /* ふりがな表示中の小学範囲は行間を広めにとる */
   html[data-ruby="on"] .kind-e .q-text, html[data-ruby="on"] .kind-e .recap,
   html[data-ruby="on"] .kind-e .expl .body, html[data-ruby="on"] .kind-e .choice .ctext,
-  html[data-ruby="on"] .kind-e .ans-line{line-height:2.15;}
+  html[data-ruby="on"] .kind-e .ans-line, html[data-ruby="on"] .kind-e .hint .hb{line-height:2.15;}
   .frac{display:inline-flex; flex-direction:column; align-items:center; vertical-align:middle;
     margin:0 .18em; line-height:1.2; font-size:.92em; font-variant-numeric:tabular-nums;}
   .frac .n{padding:0 .3em;}
@@ -199,6 +199,46 @@
   .choice.wrong{background:var(--wrong-soft); border-color:var(--wrong); color:var(--wrong-ink);}
   .choice.wrong .mark{color:var(--wrong);}
   .choice.dim{opacity:.45;}
+
+  /* ============ やさしいモード(練習・復習だけ。10問チャレンジは従来どおり) ============ */
+  /* まちがえた選択肢は赤くせず、うすくして押せなくする(✕も音も出さない) */
+  .choice.gone{opacity:.35; border-style:dashed; box-shadow:none; cursor:default;}
+  .choice.gone:active{transform:none;}
+  .easy-tools{display:none; margin:2px 0 8px;}
+  .tool-row{display:flex; gap:10px;}
+  .tool-row .btn{flex:1; font-size:15.5px; padding:11px 10px;}
+  .hints{display:flex; flex-direction:column; gap:8px; margin-top:10px;}
+  .hints:empty{display:none;}
+  .hint{background:var(--card); border:1px solid var(--line); border-left:4px solid var(--brand);
+    border-radius:10px; padding:9px 13px; font-size:15px; line-height:1.85;}
+  .hint.pt{border-left-color:var(--accent);}
+  .hint .hl{display:block; font-size:12px; font-weight:800; color:var(--brand-dark);}
+  .hint.pt .hl{color:var(--warn-ink);}
+  .hint .hb{white-space:pre-wrap; overflow-wrap:anywhere;}
+  .calc{display:none; margin-top:10px; background:var(--card); border:1px solid var(--line);
+    border-radius:12px; padding:10px; box-shadow:var(--shadow-sm);}
+  .calc.show{display:block;}
+  .calc-disp{background:var(--brand-soft); border-radius:8px; padding:6px 10px; margin-bottom:8px; text-align:right;
+    font-variant-numeric:tabular-nums; overflow-wrap:anywhere;}
+  .calc-expr{min-height:1.4em; font-size:14px; color:var(--ink-soft);}
+  .calc-val{font-size:24px; font-weight:800; color:var(--ink); line-height:1.3;}
+  .calc-keys{display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:6px;}
+  .calc-keys button{min-height:48px; border:1.5px solid var(--line); border-radius:10px; background:var(--card);
+    color:var(--ink); font-family:inherit; font-size:20px; font-weight:700; cursor:pointer;}
+  .calc-keys button.op{color:var(--brand-dark); background:var(--brand-soft);}
+  .calc-keys button.eq{background:var(--brand); color:#fff; border-color:var(--brand);}
+  .calc-keys button:active{transform:scale(.96);}
+  .easy-kanji{margin:10px 0 0; font-size:12.5px; color:var(--ink-soft); text-align:center;}
+  .easy-retry{margin:0 0 8px; font-size:14px; font-weight:700; color:var(--brand-dark); text-align:center;}
+  .easy-retry:empty{display:none;}
+  .retry-note{text-align:center; font-size:13px; font-weight:700; color:var(--ink-soft); margin:0 0 6px;}
+  .retry-note:empty{display:none;}
+  .easy-box{text-align:center;}
+  .easybtn{border:1.5px solid var(--line); background:var(--card); color:var(--ink-soft); border-radius:999px;
+    font-family:inherit; font-size:14.5px; font-weight:700; padding:10px 20px; min-height:44px; cursor:pointer;}
+  .easybtn.on{border-color:var(--brand); color:var(--brand-dark); background:var(--brand-soft);}
+  .easy-note{display:none; margin:8px 0 0; font-size:13px; line-height:1.7; color:var(--ink-soft); text-align:left;
+    background:var(--card); border-radius:10px; padding:9px 12px; border:1px solid var(--line);}
 
   /* ============ 解説 ============ */
   .verdict{font-size:26px; font-weight:800; margin:0 0 4px; text-align:center;}
@@ -288,6 +328,7 @@
       <div class="stat-row"><span>正解したことのある問題</span><b id="home-done">0</b></div>
       <div class="stat-row"><span>小学校の算数</span><b id="home-e">—</b></div>
       <div class="stat-row"><span>中学校の数学</span><b id="home-j">—</b></div>
+      <div class="stat-row" id="home-hint-row"><span>ヒントを見た回数</span><b id="home-hint">0</b></div>
     </div>
 
     <p class="warn" id="data-warn"></p>
@@ -299,6 +340,11 @@
       <button class="btn btn-sub" id="btn-browse">📖 解説を読む</button>
     </div>
 
+    <div class="easy-box">
+      <button class="easybtn" id="easy-btn" type="button" aria-pressed="false">やさしいモード なし</button>
+      <p class="easy-note" id="easy-note">間違えた選択肢は うすくなって押せなくなり、残りから もう一度えらべます。えらび直した問題は、正答率では不正解として数え、「間違えた問題を復習」にも出てきます。ヒント(解説のポイントと手順を1つずつ)と電卓も使えます。読めない漢字は、変換や辞書を使って調べてかまいません。10問チャレンジは、いつもどおりです。</p>
+    </div>
+
     <div class="home-foot">
       <p class="source">問題と解説は、学習指導要領の内容にそって当団体が独自に作成したものです。学校・教科書会社・検定団体とは関係がありません。学習記録は端末の中だけに保存されます。</p>
       <a class="credit" id="credit-link" href="https://soudansoyogi.com/" target="_blank" rel="noopener noreferrer">アプリ開発: 介護と支援の相談どころ そよぎ</a>
@@ -306,7 +352,7 @@
         <button class="linkbtn" id="reset-btn">学習記録をリセット</button>
         <div class="foot-right">
           <button class="rubybtn on" id="ruby-btn" title="小学校の範囲のふりがなを出す/消す" aria-pressed="true">ふりがな あり</button>
-          <span class="ver" id="app-version">v0.1.0</span>
+          <span class="ver" id="app-version">v0.2.0</span>
           <button class="iconbtn small" id="theme-btn" title="夜の色にする" aria-label="配色を切り替える" aria-pressed="false">🌙</button>
         </div>
       </div>
@@ -370,12 +416,26 @@
     <div class="figbox" id="q-fig"></div>
     <div class="tblbox" id="q-tbl"></div>
     <div class="choices" id="q-choices"></div>
+    <div class="easy-tools" id="easy-tools">
+      <p class="easy-retry" id="easy-retry" aria-live="polite"></p>
+      <div class="tool-row">
+        <button class="btn btn-sub" id="hint-btn" type="button">💡 ヒント</button>
+        <button class="btn btn-sub" id="calc-btn" type="button" aria-expanded="false">🔢 電卓</button>
+      </div>
+      <div class="hints" id="q-hints"></div>
+      <div class="calc" id="calc">
+        <div class="calc-disp"><div class="calc-expr" id="calc-expr"></div><div class="calc-val" id="calc-val">0</div></div>
+        <div class="calc-keys" id="calc-keys"></div>
+      </div>
+      <p class="easy-kanji">読めない漢字は、変換や辞書を使って調べてかまいません。</p>
+    </div>
   </section>
 
   <!-- ============ 解説 ============ -->
   <section id="result" class="screen">
     <div class="verdict" id="verdict"></div>
     <p class="ans-line" id="ans-line"></p>
+    <p class="retry-note" id="retry-note"></p>
     <p class="topic-line"><span class="topic-chip" id="r-topic"></span></p>
     <div class="recap" id="r-question"></div>
     <div class="figbox" id="r-fig"></div>
@@ -444,10 +504,11 @@
 (function(){
   "use strict";
 
-  var VERSION="0.1.0";
+  var VERSION="0.2.0";
   var STORAGE_KEY="mathtr.save.v1";
   var THEME_KEY="mathtr.theme.v1";                      // 学習記録とは別キー＝リセットでは消えない
   var RUBY_KEY="mathtr.ruby.v1";
+  var EASY_KEY="mathtr.easy.v1";                        // やさしいモード(既定=なし)。学習記録とは別キー
   var THEME_META={ light:"#00897b", dark:"#111a19" };
   var MARKS="①②③④";
   var TAGS=["e1","e2","e3","e4","e5","e6","j1","j2","j3"];
@@ -469,7 +530,7 @@
 
   var DATA=window.MT_DATA||{};
 
-  var save={ answers:{}, best:{}, decks:{} };
+  var save={ answers:{}, best:{}, decks:{}, hints:{} };   // hints: qid -> ヒントを見た回数(やさしいモード)
   var mode=null;        // "unit" | "level" | "challenge" | "review" | "browse"
   var deckKey=null;     // 練習デッキの識別 "unit:e3_u01" / "level:e3"
   var seq=[], seqIdx=0; // チャレンジ/復習の出題キュー(qidの配列)
@@ -481,6 +542,11 @@
   var unitsTag=null;    // 単元一覧に出している段階
   var browseUnit=null, browseSeq=[], browseIdx=0;   // 解説閲覧(学習記録には一切さわらない)
   var theme="light", rubyOn=true;
+  var easyOn=false;
+  var tries=0;                  // やさしいモード: いまの問題で消した選択肢の数
+  var hintCut=null, hintShown=0; // やさしいモード: 解説から切り出したヒントと、出した数
+  var answered=false;           // やさしいモード: 正解を押した(解説へ移る前にヒントを数えない)
+  var calcExpr="", calcDone=false;
 
   var el=function(id){ return document.getElementById(id); };
   var screens={ home:el("home"), levels:el("levels"), units:el("units"), browse:el("browse"),
@@ -494,6 +560,7 @@
         if(s.answers&&typeof s.answers==="object"&&!Array.isArray(s.answers)) save.answers=s.answers;
         if(s.best&&typeof s.best==="object"&&!Array.isArray(s.best)) save.best=s.best;
         if(s.decks&&typeof s.decks==="object"&&!Array.isArray(s.decks)) save.decks=s.decks;
+        if(s.hints&&typeof s.hints==="object"&&!Array.isArray(s.hints)) save.hints=s.hints;
       }
     }catch(e){}
   }
@@ -550,6 +617,166 @@
   }
   function setRuby(on){ applyRuby(on); try{ localStorage.setItem(RUBY_KEY, rubyOn?"on":"off"); }catch(e){} }
   function toggleRuby(){ setRuby(!rubyOn); }
+
+  /* ---- やさしいモード(既定=なし・練習と復習だけ。10問チャレンジは従来の○✕) ----
+     ・まちがえた選択肢は✕を出さずに消し、のこりからもう一度えらぶ
+     ・ヒント=解説から機械的に切り出す(新しく書かない): 1つめ=「ポイント:」、2つめ以降=手順の行(冒頭の「答えは…。」は外す)
+     ・画面の中の電卓 */
+  function savedEasy(){
+    var r=null;
+    try{ r=localStorage.getItem(EASY_KEY); }catch(e){}
+    return r==="on";
+  }
+  function applyEasy(on){
+    easyOn=!!on;
+    var b=el("easy-btn");
+    if(b){
+      b.textContent=easyOn?"やさしいモード あり":"やさしいモード なし";
+      b.classList.toggle("on", easyOn);
+      b.setAttribute("aria-pressed", easyOn?"true":"false");
+    }
+    var n=el("easy-note"); if(n) n.style.display=easyOn?"block":"none";
+  }
+  function setEasy(on){ applyEasy(on); try{ localStorage.setItem(EASY_KEY, easyOn?"on":"off"); }catch(e){} }
+  function toggleEasy(){ setEasy(!easyOn); renderHome(); }
+  function easyActive(){ return easyOn && (mode==="unit" || mode==="level" || mode==="review"); }
+
+  function plainText(html){ return String(html||"").replace(/<rt>[^<]*<\/rt>/g,"").replace(/<[^>]*>/g,""); }
+  function cutHints(ex){
+    var s=String(ex||""), point=null, k=s.lastIndexOf("ポイント:");
+    if(k>=0){ point=s.slice(k+5).trim(); s=s.slice(0,k); }
+    var trim=function(x){ return x.trim(); }, has=function(x){ return !!x; };
+    var lines=s.split("\n").map(trim).filter(has);
+    if(lines.length===1) lines=lines[0].replace(/。/g,"。\n").split("\n").map(trim).filter(has);
+    if(lines.length && /^答えは/.test(plainText(lines[0]).trim())){
+      var j=lines[0].indexOf("。"), tail=j>=0 ? lines[0].slice(j+1).trim() : "";
+      if(tail) lines[0]=tail; else lines.shift();
+    }
+    // 式の行をはさんで1つの文が数行に分かれる解説がある(「…ですから、」「∠AOB=74°」「です。」)。
+    // 文の終わり(。など)が来るまで行をつないで1枚にする(.hb は pre-wrap なので改行はそのまま見える)
+    var joined=[], buf="";
+    lines.forEach(function(x){
+      buf = buf ? buf+"\n"+x : x;
+      if(/[。!?！？]$/.test(plainText(x).trim())){ joined.push(buf); buf=""; }
+    });
+    if(buf) joined.push(buf);
+    lines=joined;
+    var out=[];
+    if(point) out.push({ pt:true, html:point });
+    lines.forEach(function(x){ out.push({ pt:false, html:x }); });
+    return out;
+  }
+  function hintTotal(){
+    var n=0;
+    for(var qid in save.hints){ n+=(save.hints[qid]||0); }
+    return n;
+  }
+  function updateHintBtn(){
+    var b=el("hint-btn"), n=hintCut?hintCut.length:0;
+    if(!b) return;
+    if(hintShown>=n){ b.disabled=true; b.textContent="💡 ヒントは ここまで"; }
+    else { b.disabled=false; b.textContent = hintShown===0 ? "💡 ヒント" : "💡 次のヒント ("+(hintShown+1)+"/"+n+")"; }
+  }
+  function showHint(){
+    if(!easyActive() || !current || answered || !hintCut || hintShown>=hintCut.length) return;
+    var h=hintCut[hintShown++];
+    var d=document.createElement("div"); d.className="hint"+(h.pt?" pt":"");
+    var l=document.createElement("span"); l.className="hl"; l.textContent = h.pt ? "ポイント" : "ヒント "+hintShown;
+    var body=document.createElement("div"); body.className="hb"; body.innerHTML=h.html;
+    d.appendChild(l); d.appendChild(body);
+    el("q-hints").appendChild(d);
+    save.hints[current.qid]=(save.hints[current.qid]||0)+1; persist();
+    updateHintBtn();
+    try{ if(d.scrollIntoView) d.scrollIntoView({ block:"nearest", behavior:"smooth" }); }catch(e){}
+  }
+  // 出題のたびに呼ぶ。やさしいモードでなければ道具ごと隠す
+  function prepareEasy(){
+    tries=0; hintShown=0; hintCut=null; answered=false;
+    el("q-hints").innerHTML="";
+    el("easy-retry").textContent="";
+    calcExpr=""; calcDone=false; renderCalc("", "0");
+    var on=easyActive();
+    el("easy-tools").style.display = on ? "block" : "none";
+    if(on){ hintCut=cutHints(current.q.explanation); updateHintBtn(); }
+  }
+
+  /* 電卓: + − × ÷ と かっこ・小数。eval は使わず小さな構文解析で計算する */
+  var CALC_KEYS=["C","(",")","⌫","7","8","9","÷","4","5","6","×","1","2","3","−","0",".","=","+"];
+  function calcEval(src){
+    var s=String(src), i=0;
+    function peek(){ return s.charAt(i); }
+    function num(){
+      var st=i; while(/[0-9.]/.test(s.charAt(i))) i++;
+      var t=s.slice(st,i);
+      if(!t || t==="." || (t.match(/\./g)||[]).length>1) throw new Error("num");
+      return parseFloat(t);
+    }
+    function factor(){
+      var c=peek();
+      if(c==="−"){ i++; return -factor(); }
+      if(c==="("){ i++; var v=expr(); if(peek()!==")") throw new Error("paren"); i++; return v; }
+      return num();
+    }
+    function term(){
+      var v=factor();
+      for(;;){
+        var c=peek();
+        if(c==="×"){ i++; v*=factor(); }
+        else if(c==="÷"){ i++; var d=factor(); if(d===0) throw new Error("div0"); v/=d; }
+        else return v;
+      }
+    }
+    function expr(){
+      var v=term();
+      for(;;){
+        var c=peek();
+        if(c==="+"){ i++; v+=term(); }
+        else if(c==="−"){ i++; v-=term(); }
+        else return v;
+      }
+    }
+    var v=expr();
+    if(i!==s.length || !isFinite(v)) throw new Error("rest");
+    return parseFloat(calcFmt(v));
+  }
+  // 小数点以下の桁で丸めた文字列(有効数字で丸めると 1000.3−1000.2 や13けたの整数がずれ、小さい数は 1e−7 になる)。
+  // 整数部と小数部を合わせて14けたまで・小数は10けたまで。古い端末のため Math.log10 は使わない
+  function calcFmt(v){
+    var a=Math.abs(v);
+    if(!isFinite(v) || a>=1e15) throw new Error("big");
+    var ip = a<1 ? 1 : Math.floor(Math.log(a)/Math.LN10)+1;
+    var s=v.toFixed(Math.max(0, Math.min(10, 14-ip)));
+    if(s.indexOf(".")>=0) s=s.replace(/0+$/,"").replace(/\.$/,"");
+    return (s==="-0") ? "0" : s;
+  }
+  function calcShow(v){ return calcFmt(v).replace(/-/g,"−"); }
+  // 上の小さい行=計算した式、下の大きい行=いま打っている式か答え
+  function renderCalc(top, big){
+    var e=el("calc-expr"), v=el("calc-val");
+    if(e) e.textContent=top||"";
+    if(v) v.textContent=big;
+  }
+  function calcPress(k){
+    if(k==="C"){ calcExpr=""; calcDone=false; renderCalc("", "0"); return; }
+    if(k==="⌫"){ calcDone=false; calcExpr=calcExpr.slice(0,-1); renderCalc("", calcExpr||"0"); return; }
+    if(k==="="){
+      if(!calcExpr || calcDone) return;
+      var r;
+      try{ r=calcShow(calcEval(calcExpr)); }catch(e){ renderCalc(calcExpr, "計算できません"); return; }
+      renderCalc(calcExpr+" =", r);
+      calcExpr=r; calcDone=true;
+      return;
+    }
+    // 計算のあと: 数字なら新しい式、記号ならその答えの続き
+    if(calcDone){ if(/[0-9.(]/.test(k)) calcExpr=""; calcDone=false; }
+    calcExpr+=k;
+    renderCalc("", calcExpr);
+  }
+  function toggleCalc(){
+    var c=el("calc"), open=!c.classList.contains("show");
+    c.classList.toggle("show", open);
+    el("calc-btn").setAttribute("aria-expanded", open?"true":"false");
+  }
 
   /* ---- データの参照 ---- */
   function metaOf(tag){ return META[tag]||{}; }
@@ -666,6 +893,9 @@
     el("home-done").textContent = doneCount(pool)+" / "+pool.length;
     el("home-e").textContent = rateText(tally("E"));
     el("home-j").textContent = rateText(tally("J"));
+    var hs=hintTotal();
+    el("home-hint").textContent = hs;
+    el("home-hint-row").style.display = (easyOn || hs>0) ? "" : "none";
 
     var n=wrongQids().length, rb=el("btn-review");
     rb.textContent="🔁 間違えた問題を復習 ("+n+"件)";
@@ -852,6 +1082,7 @@
       b.addEventListener("click", function(){ onAnswer(orig+1,b); }, {once:true});
       box.appendChild(b);
     });
+    prepareEasy();
     show("quiz");
   }
 
@@ -859,13 +1090,25 @@
 
   function onAnswer(num, btn){
     var q=current.q, ok=isCorrect(q,num);
+    // やさしいモード: 間違えた選択肢は✕を出さずにうすくし、残りからもう一度えらぶ。
+    // 記録は1問に1回だけ=最初に間違えた時点で「不正解」として残す(途中でホームへ戻っても復習に入る)
+    if(!ok && easyActive()){
+      tries++;
+      if(tries===1) record(current.qid, false);
+      if(btn){ btn.classList.add("gone"); btn.disabled=true; btn.setAttribute("aria-disabled","true"); }
+      el("easy-retry").textContent="残りから もう一度えらべます";
+      return;
+    }
+    answered=true;
+    if(el("hint-btn")) el("hint-btn").disabled=true;
     var btns=el("q-choices").querySelectorAll(".choice");
     for(var i=0;i<btns.length;i++){ btns[i].style.pointerEvents="none"; }
 
     // チャレンジは解答を伏せたまま通す。記録は採点時にまとめて。
     if(mode==="challenge"){ picks[current.qid]=num; advanceChallenge(); return; }
 
-    record(current.qid, ok);
+    // やさしいモードで選び直して正解したときは、最初に間違えた時点で記録済み(正答率では不正解・復習に入る)
+    if(tries===0) record(current.qid, ok);
     for(i=0;i<btns.length;i++){
       var n=parseInt(btns[i].getAttribute("data-orig"),10);
       if(isCorrect(q,n)) btns[i].classList.add("correct");
@@ -944,8 +1187,10 @@
   function toResult(f, pick, ok, backToScore){
     fromScore=!!backToScore;
     var v=el("verdict");
-    v.textContent = ok ? "○ 正解" : "✕ 不正解";
+    var retried = !backToScore && tries>0 && easyActive();
+    v.textContent = ok ? (retried ? "○ 正解("+(tries+1)+"回目)" : "○ 正解") : "✕ 不正解";
     v.className="verdict "+(ok?"ok":"ng");
+    el("retry-note").textContent = retried ? "えらび直した問題は、あとで「間違えた問題を復習」にも出てきます。" : "";
     renderAnsLine(f.q, pick, !!backToScore);
     renderTopic(f);
     renderRecap(f);
@@ -1009,6 +1254,7 @@
     var v=el("verdict");
     v.textContent="📖 解説閲覧";
     v.className="verdict browse";
+    el("retry-note").textContent="";
     renderAnsLine(f.q, null, false);
     renderTopic(f);
     renderRecap(f);
@@ -1066,8 +1312,8 @@
   function closePick(){ el("pick-overlay").classList.remove("show"); }
 
   function resetProgress(){
-    if(!confirm("学習記録(解答数・正答率・ベストスコア・出題の残り)をすべて消します。よろしいですか?")) return;
-    save={ answers:{}, best:{}, decks:{} };
+    if(!confirm("学習記録(解答数・正答率・ベストスコア・出題の残り・ヒントを見た回数)をすべて消します。よろしいですか?")) return;
+    save={ answers:{}, best:{}, decks:{}, hints:{} };
     persist(); renderHome();
   }
 
@@ -1082,6 +1328,17 @@
   el("reset-btn").addEventListener("click", resetProgress);
   el("theme-btn").addEventListener("click", toggleTheme);
   el("ruby-btn").addEventListener("click", toggleRuby);
+  el("easy-btn").addEventListener("click", toggleEasy);
+  el("hint-btn").addEventListener("click", showHint);
+  el("calc-btn").addEventListener("click", toggleCalc);
+  CALC_KEYS.forEach(function(k){
+    var b=document.createElement("button");
+    b.type="button"; b.textContent=k;
+    b.className = k==="=" ? "eq" : (/[÷×−+()C⌫]/.test(k) ? "op" : "");
+    if(k==="⌫") b.setAttribute("aria-label","1文字けす");
+    b.addEventListener("click", function(){ calcPress(k); });
+    el("calc-keys").appendChild(b);
+  });
   el("levels-home").addEventListener("click", goHome);
   el("units-home").addEventListener("click", goHome);
   el("units-back").addEventListener("click", function(){ renderLevels(); show("levels"); });
@@ -1119,6 +1376,7 @@
   el("app-version").textContent="v"+VERSION;
   applyTheme(savedTheme() || (prefersDark()?"dark":"light"));
   applyRuby(savedRuby());
+  applyEasy(savedEasy());
   setResultFoot(false);
   load(); renderHome(); show("home");
 
@@ -1137,9 +1395,12 @@
     openPick:openPick, closePick:closePick, openFig:openFig, closeFig:closeFig,
     poolQids:poolQids, wrongQids:wrongQids, allTags:allTags, findQ:findQ, tally:tally, doneCount:doneCount,
     kindOfTag:kindOfTag, unitName:unitName, unitsOf:unitsOf, markOf:markOf,
+    setEasy:setEasy, toggleEasy:toggleEasy, cutHints:cutHints, showHint:showHint, hintTotal:hintTotal,
+    calcEval:calcEval, calcPress:calcPress, toggleCalc:toggleCalc,
     peek:function(){ return { mode:mode, seq:seq, seqIdx:seqIdx, current:current, order:order, picks:picks,
       lastScore:lastScore, save:save, deckKey:deckKey, fromScore:fromScore, chTag:chTag, unitsTag:unitsTag,
-      browseUnit:browseUnit, browseSeq:browseSeq, browseIdx:browseIdx, theme:theme, rubyOn:rubyOn }; }
+      browseUnit:browseUnit, browseSeq:browseSeq, browseIdx:browseIdx, theme:theme, rubyOn:rubyOn,
+      easyOn:easyOn, tries:tries, hintShown:hintShown, hintCut:hintCut, calcExpr:calcExpr }; }
   };
 })();
 </script>
