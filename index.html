@@ -315,8 +315,33 @@
   .ask-row{display:flex; gap:10px;}
   .ask-row .btn{flex:1; padding:13px 10px;}
 
+  /* ============ はじめての つかいかた(初回の案内・2026-09-30) ============ */
+  /* 画面いっぱいに重ねる。ほかの窓(50)より上・確かめの窓(60)より下。
+     「まえへ/つぎへ」は下に固定した地の色の帯(長いページでも本文が透けない)。本文の下の余白は帯より高くする */
+  /* 出るときは うすさだけ変える(transform を使うと、そのあいだ下の帯が案内といっしょに流れてしまう) */
+  .guide-ov{position:fixed; inset:0; z-index:55; overflow-y:auto; -webkit-overflow-scrolling:touch;
+    background:var(--bg1); color:var(--ink); animation:guideIn .2s ease;
+    padding:calc(18px + env(safe-area-inset-top)) 18px calc(128px + env(safe-area-inset-bottom));}
+  @keyframes guideIn{from{opacity:0;} to{opacity:1;}}
+  .guide-box{max-width:540px; margin:0 auto;}
+  .guide-top{display:flex; justify-content:space-between; align-items:baseline; gap:12px;}
+  .guide-title{margin:0; font-size:14px; font-weight:800; color:var(--brand-dark);}
+  .guide-step{margin:0; font-size:14px; font-weight:700; color:var(--ink-soft); white-space:nowrap;
+    unicode-bidi:isolate; font-variant-numeric:tabular-nums;}
+  .guide-h{margin:14px 0 12px; font-size:21px; line-height:1.5; font-weight:800; color:var(--brand-dark);
+    overflow-wrap:anywhere;}
+  .guide-p{margin:0; background:var(--card); border-radius:var(--r); box-shadow:var(--shadow);
+    padding:16px 18px; font-size:16px; line-height:1.9; white-space:pre-line; overflow-wrap:anywhere;}
+  .guide-dots{display:flex; justify-content:center; flex-wrap:wrap; gap:8px; margin:20px 0 0;}
+  .guide-dot{width:10px; height:10px; border-radius:50%; background:var(--line);}
+  .guide-dot.on{background:var(--brand);}
+  .guide-row{position:fixed; z-index:56; left:0; right:0; bottom:0; display:flex; justify-content:center; gap:10px;
+    padding:10px 18px calc(14px + env(safe-area-inset-bottom)); background:var(--bg1); border-top:1px solid var(--line);}
+  .guide-row .btn{flex:1 1 0; min-width:0; max-width:260px; min-height:56px; padding:12px 10px;}
+
   @media (prefers-reduced-motion: reduce){
     .screen{animation:none;}
+    .guide-ov{animation:none;}
   }
 </style>
 </head>
@@ -356,13 +381,14 @@
     </div>
 
     <div class="home-foot">
+      <button class="linkbtn" id="guide-btn" type="button">つかいかたを もう一度 見る</button>
       <p class="source">問題と解説は、学習指導要領の内容にそって当団体が独自に作成したものです。学校・教科書会社・検定団体とは関係がありません。学習記録は端末の中だけに保存されます。</p>
       <a class="credit" id="credit-link" href="https://soudansoyogi.com/" target="_blank" rel="noopener noreferrer">アプリ開発: 介護と支援の相談どころ そよぎ</a>
       <div class="foot-row">
         <button class="linkbtn" id="reset-btn">学習記録をリセット</button>
         <div class="foot-right">
           <button class="rubybtn on" id="ruby-btn" title="小学校の範囲のふりがなを出す/消す" aria-pressed="true">ふりがな あり</button>
-          <span class="ver" id="app-version">v0.2.1</span>
+          <span class="ver" id="app-version">v0.2.2</span>
           <button class="iconbtn small" id="theme-btn" title="夜の色にする" aria-label="配色を切り替える" aria-pressed="false">🌙</button>
         </div>
       </div>
@@ -514,7 +540,7 @@
 (function(){
   "use strict";
 
-  var VERSION="0.2.1";
+  var VERSION="0.2.2";
   var STORAGE_KEY="mathtr.save.v1";
   var THEME_KEY="mathtr.theme.v1";                      // 学習記録とは別キー＝リセットでは消えない
   var RUBY_KEY="mathtr.ruby.v1";
@@ -1334,7 +1360,8 @@
   /* ---- Play版(Android)の戻るボタンと確かめの窓(2026-09-30) ----
      ・Capacitor の WebView は戻るボタンを受け取らない(@capacitor/app が無いと、戻る=アプリごと後ろに下がる)。
        Play版(isNativePlatform)だけ Capacitor.Plugins.App の backButton を受け取る(registerPlugin は WebView に無い)。
-       押したときの順: ①確かめの窓=いいえ ②図の拡大・10問チャレンジの段階えらび=閉じる ③出題中に開いた電卓=閉じる
+       押したときの順: ①確かめの窓=いいえ ①'はじめての つかいかた=まえのページ(1ページ目は下の openGuide の決まり)
+                      ②図の拡大・10問チャレンジの段階えらび=閉じる ③出題中に開いた電卓=閉じる
                       ④ホーム以外の画面=その画面の「もどる/✕/ホームへ」と同じ行き先(チャレンジの中断は今までどおり確かめる)
                       ⑤ホーム=アプリを後ろに下げる(minimizeApp。学習記録はそのまま)
      ・Play版の window.confirm は Capacitor がボタンを英語の OK / Cancel に決め打ちしている。
@@ -1397,6 +1424,7 @@
   var BACK_BTN={ levels:"levels-home", units:"units-back", browse:"browse-units", quiz:"quiz-home", score:"score-back" };
   function onBack(){
     if(askOpen){ askOpen.no(); return; }
+    if(guideOpen){ guideOpen.back(); return; }
     if(el("fig-overlay").classList.contains("show")){ closeFig(); return; }
     if(el("pick-overlay").classList.contains("show")){ closePick(); return; }
     var cur=activeScreen();
@@ -1416,6 +1444,86 @@
     try{ ap.addListener("backButton", function(){ onBack(); }); }catch(e){}
   }
 
+  /* ---- はじめての つかいかた(初回の案内・2026-09-30) ----
+     ヒロさん「ひとつずつ・そよぎ みたいなタイプのアプリは、必ず最初に使い方の丁寧な説明を出してほしい。10代の情報室のように」。
+     ・初回起動で必ず出す(最後まで読むまで、開くたびに出る)。画面いっぱいに重ねる(確かめの窓より下)
+     ・1ページずつ「つぎへ」「まえへ」で進む。閉じるのは最後のページの「はじめる」だけ(× は置かない)
+     ・戻るボタン(Play版): 2ページ目から=まえのページ / 1ページ目=初回なら後ろに下げる(閉じない・10代の情報室と同じ)、
+       ホームの「つかいかたを もう一度 見る」から開いたときは閉じる
+     ・読み終えたら GUIDE_KEY に "true"(学習記録とは別キー=「学習記録をリセット」では消えない)
+     ・本文の「」の中は画面の文字と同じにする(変えたら ここも。store/_back_check.js が照らす) */
+  var GUIDE_KEY="mathtr.guide.v1";
+  var GUIDE={
+    title:"つかいかた", step:"{n} / {m}", prev:"まえへ", next:"つぎへ", start:"はじめる",
+    heads:[
+      "算数・数学 やさしくトレーニングへ ようこそ",
+      "段階と単元をえらんで練習",
+      "答えると、すぐに解説",
+      "10問チャレンジと復習",
+      "解説だけを読む",
+      "やさしいモード",
+      "記録は この端末の中だけ",
+      "ふりがなと夜の色"
+    ],
+    bodies:[
+      "小学校の算数(1年〜6年)と中学校の数学(1年〜3年)を、4択の問題と解説で学び直すアプリです。\n9つの段階の、どこからでも始められます。\n問題と解説は、学習指導要領の内容にそって当団体が独自に作ったものです。学校・教科書会社・検定団体とは関係がありません。",
+      "ホームの「📚 段階をえらんで練習」を押して、段階(小1〜中3)をえらびます。\n次に単元をえらぶと、その単元の問題が1問ずつ出ます。\n「▶ この段階をまとめて練習」を押すと、段階ぜんぶの中から出ます。\nひととおり出るまで、同じ問題はくり返しません。選択肢の並びは、出るたびに変わります。",
+      "選択肢を押すと、正解は緑、間違いは赤になり、そのあと解説に進みます。\n「次へ」で次の問題、「ホームへ」でホームにもどります。\n図は、押すと大きく見られます。\n問題の画面では、左上の「✕」でホームにもどれます。",
+      "「🎲 10問チャレンジ」は、段階をえらぶと その範囲から10問を続けて出し、最後にまとめて答え合わせをします。\n答え合わせの画面で番号のマスを押すと、その問題の解説を読めます。いちばん良かった点は「ベスト」として残ります。\n途中で「✕」を押すと中断でき、その回の答えは記録されません。\n間違えた問題は「🔁 間違えた問題を復習」で、もう一度解けます(最後に解いたときに間違えた問題が出ます)。",
+      "「📖 解説を読む」では、段階と単元をえらぶと問題の一覧が出て、問題を押すと その解説を読めます。\n「前の問題」「次の問題」で順に読めます。\nここで読んでも、学習記録は変わりません。",
+      "ホームの「やさしいモード なし」を押すと「やさしいモード あり」になります。\n練習と復習で、間違えた選択肢がうすくなり、残りから もう一度えらべます(正答率では不正解として数え、復習にも出てきます)。\n「💡 ヒント」で解説のポイントと手順を1つずつ見られ、「🔢 電卓」も使えます。\n10問チャレンジは、いつもどおりです。",
+      "学習記録(正答率・ベスト・復習する問題など)は、この端末の中だけに保存され、どこにも送られません。登録もいりません。\nホームのいちばん下の「学習記録をリセット」で、記録をすべて消せます(消す前に確かめます)。\n機種を変えるときに、記録を移すしくみはありません。",
+      "ホームのいちばん下の「ふりがな あり」を押すと、小学校の範囲のふりがなを消せます。もう一度押すと出ます。\n🌙 を押すと夜の色、☀️ を押すと昼の色になります。\nこの案内は、ホームの下のほうの「つかいかたを もう一度 見る」で、いつでも見られます。"
+    ]
+  };
+  var guideOpen=null;   // 出している案内({back:戻るボタン1回, page:いまのページ})
+  function guideDone(){ var v=null; try{ v=localStorage.getItem(GUIDE_KEY); }catch(e){} return v==="true"; }
+  function openGuide(first){
+    if(guideOpen) return;                                   // もう出ていれば二重に出さない
+    var n=GUIDE.bodies.length, i=0;
+    var mk=function(tag, cls){ var e=document.createElement(tag); e.className=cls; return e; };
+    var ov=mk("div","guide-ov");
+    ov.setAttribute("role","dialog"); ov.setAttribute("aria-modal","true"); ov.setAttribute("aria-label", GUIDE.title);
+    var box=mk("div","guide-box"), top=mk("div","guide-top");
+    var ttl=mk("p","guide-title"), step=mk("p","guide-step");
+    step.setAttribute("dir","ltr");                          // 「2 / 8」は いつも左から
+    var h=mk("h2","guide-h"), p=mk("p","guide-p"), dots=mk("div","guide-dots");
+    dots.setAttribute("aria-hidden","true");
+    var row=mk("div","guide-row");
+    var prevB=mk("button","btn btn-sub guide-prev"), nextB=mk("button","btn btn-primary guide-next");
+    prevB.type="button"; nextB.type="button";
+    top.appendChild(ttl); top.appendChild(step);
+    box.appendChild(top); box.appendChild(h); box.appendChild(p); box.appendChild(dots);
+    row.appendChild(prevB); row.appendChild(nextB);
+    ov.appendChild(box); ov.appendChild(row);
+    function draw(){
+      ttl.textContent=GUIDE.title;
+      step.textContent=GUIDE.step.replace("{n}", i+1).replace("{m}", n);
+      h.textContent=GUIDE.heads[i]||"";
+      p.textContent=GUIDE.bodies[i];
+      dots.innerHTML="";
+      for(var k=0;k<n;k++) dots.appendChild(mk("span","guide-dot"+(k===i?" on":"")));
+      prevB.textContent=GUIDE.prev;
+      prevB.style.visibility=(i===0)?"hidden":"visible";    // 1ページ目も「つぎへ」の位置を変えない
+      nextB.textContent=(i===n-1)?GUIDE.start:GUIDE.next;
+      ov.scrollTop=0;
+    }
+    function close(){
+      if(ov.parentNode) ov.parentNode.removeChild(ov);
+      guideOpen=null;
+      try{ localStorage.setItem(GUIDE_KEY,"true"); }catch(e){}
+    }
+    prevB.addEventListener("click", function(){ if(i>0){ i--; draw(); } });
+    nextB.addEventListener("click", function(){ if(i<n-1){ i++; draw(); } else close(); });
+    guideOpen={
+      back:function(){ if(i>0){ i--; draw(); return; } if(first) minimizeApp(); else close(); },
+      page:function(){ return i; }
+    };
+    draw();
+    document.body.appendChild(ov);
+    try{ nextB.focus(); }catch(e){}
+  }
+
   /* ---- 配線 ---- */
   el("btn-levels").addEventListener("click", function(){ mode=null; renderLevels(); show("levels"); });
   el("btn-challenge").addEventListener("click", openPick);
@@ -1425,6 +1533,7 @@
     mode="browse"; renderLevels(); show("levels");
   });
   el("reset-btn").addEventListener("click", resetProgress);
+  el("guide-btn").addEventListener("click", function(){ openGuide(false); });
   el("theme-btn").addEventListener("click", toggleTheme);
   el("ruby-btn").addEventListener("click", toggleRuby);
   el("easy-btn").addEventListener("click", toggleEasy);
@@ -1479,6 +1588,7 @@
   setResultFoot(false);
   load(); renderHome(); show("home");
   watchBack();                   // Android の戻るボタン(Play版だけ)
+  if(!guideDone()) openGuide(true);   // はじめての つかいかた(読み終えるまで毎回・2026-09-30)
 
   if("serviceWorker" in navigator && location.protocol.indexOf("http")===0){
     window.addEventListener("load", function(){ navigator.serviceWorker.register("sw.js").catch(function(){}); });
@@ -1497,7 +1607,8 @@
     kindOfTag:kindOfTag, unitName:unitName, unitsOf:unitsOf, markOf:markOf,
     setEasy:setEasy, toggleEasy:toggleEasy, cutHints:cutHints, showHint:showHint, hintTotal:hintTotal,
     calcEval:calcEval, calcPress:calcPress, toggleCalc:toggleCalc,
-    peek:function(){ return { mode:mode, seq:seq, seqIdx:seqIdx, current:current, order:order, picks:picks,
+    openGuide:openGuide, guideDone:guideDone, GUIDE:GUIDE,
+    peek:function(){ return { guide:(guideOpen ? guideOpen.page() : -1), mode:mode, seq:seq, seqIdx:seqIdx, current:current, order:order, picks:picks,
       lastScore:lastScore, save:save, deckKey:deckKey, fromScore:fromScore, chTag:chTag, unitsTag:unitsTag,
       browseUnit:browseUnit, browseSeq:browseSeq, browseIdx:browseIdx, theme:theme, rubyOn:rubyOn,
       easyOn:easyOn, tries:tries, hintShown:hintShown, hintCut:hintCut, calcExpr:calcExpr }; }
