@@ -180,7 +180,14 @@
   .figbox{display:none; background:var(--figbg); border:1px solid var(--line); border-radius:8px;
     padding:8px; margin:0 0 14px; cursor:zoom-in;}
   .figbox.show{display:block;}
+  .figbox:focus-visible{outline:3px solid var(--brand); outline-offset:2px;}
   .figbox svg{display:block; width:100%; height:auto; max-width:560px; margin:0 auto;}
+  /* 読み上げソフトだけに伝える文字(正誤)と、短い知らせ(2026-10-30) */
+  .sr-only{position:absolute; width:1px; height:1px; margin:-1px; padding:0; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; border:0;}
+  .toast{position:fixed; left:50%; bottom:calc(24px + env(safe-area-inset-bottom)); transform:translateX(-50%); z-index:70; max-width:calc(100% - 32px);
+    background:#263238; color:#fff; font-size:15px; font-weight:700; line-height:1.5; padding:12px 18px; border-radius:12px; box-shadow:0 6px 18px rgba(0,0,0,.25); text-align:center;
+    opacity:0; pointer-events:none; transition:opacity .25s;}
+  .toast.show{opacity:1;}
   .tblbox{display:none; margin:0 0 14px; overflow-x:auto;}
   .tblbox.show{display:block;}
   .tbl{border-collapse:collapse; margin:0 auto; font-size:14.5px; background:var(--card); min-width:60%;}
@@ -358,11 +365,11 @@
 
     <div class="card">
       <p class="stat-title">学習記録</p>
-      <div class="stat-row main"><span>総正答率</span><b id="home-rate">—</b></div>
+      <div class="stat-row main"><span>総正答率</span><b id="home-rate">まだなし</b></div>
       <div class="stat-row"><span>総解答数</span><b id="home-total">0</b></div>
       <div class="stat-row"><span>正解したことのある問題</span><b id="home-done">0</b></div>
-      <div class="stat-row"><span>小学校の算数</span><b id="home-e">—</b></div>
-      <div class="stat-row"><span>中学校の数学</span><b id="home-j">—</b></div>
+      <div class="stat-row"><span>小学校の算数</span><b id="home-e">まだなし</b></div>
+      <div class="stat-row"><span>中学校の数学</span><b id="home-j">まだなし</b></div>
       <div class="stat-row" id="home-hint-row"><span>ヒントを見た回数</span><b id="home-hint">0</b></div>
     </div>
 
@@ -388,7 +395,7 @@
         <button class="linkbtn" id="reset-btn">学習記録をリセット</button>
         <div class="foot-right">
           <button class="rubybtn on" id="ruby-btn" title="小学校の範囲のふりがなを出す/消す" aria-pressed="true">ふりがな あり</button>
-          <span class="ver" id="app-version">v0.2.2</span>
+          <span class="ver" id="app-version">v0.2.3</span>
           <button class="iconbtn small" id="theme-btn" title="夜の色にする" aria-label="配色を切り替える" aria-pressed="false">🌙</button>
         </div>
       </div>
@@ -449,7 +456,7 @@
       <span class="pill acc" id="q-level"></span>
     </div>
     <div class="q-text" id="q-text"></div>
-    <div class="figbox" id="q-fig"></div>
+    <div class="figbox" id="q-fig" role="button" aria-label="図を大きく見る"></div>
     <div class="tblbox" id="q-tbl"></div>
     <div class="choices" id="q-choices"></div>
     <div class="easy-tools" id="easy-tools">
@@ -474,7 +481,7 @@
     <p class="retry-note" id="retry-note"></p>
     <p class="topic-line"><span class="topic-chip" id="r-topic"></span></p>
     <div class="recap" id="r-question"></div>
-    <div class="figbox" id="r-fig"></div>
+    <div class="figbox" id="r-fig" role="button" aria-label="図を大きく見る"></div>
     <div class="tblbox" id="r-tbl"></div>
     <div class="expl">
       <h3>解説</h3>
@@ -508,6 +515,9 @@
     </div>
   </section>
 
+  <div class="sr-only" id="sr-live" aria-live="polite"></div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
 </div>
 
 <!-- ============ 図の拡大 ============ -->
@@ -540,7 +550,7 @@
 (function(){
   "use strict";
 
-  var VERSION="0.2.2";
+  var VERSION="0.2.3";
   var STORAGE_KEY="mathtr.save.v1";
   var THEME_KEY="mathtr.theme.v1";                      // 学習記録とは別キー＝リセットでは消えない
   var RUBY_KEY="mathtr.ruby.v1";
@@ -600,7 +610,20 @@
       }
     }catch(e){}
   }
-  function persist(){ try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(save)); }catch(e){} }
+  // 保存できなかったら(空き容量が少ない・プライベートモードなど)その場で知らせる(続けて出さないよう、1回の起動で1回だけ)
+  var saveWarned=false;
+  function persist(){
+    try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(save)); }
+    catch(e){ if(!saveWarned){ saveWarned=true; toast("学習記録を保存できませんでした(端末の空き容量が少ないときなど)"); } }
+  }
+  var toastTimer=null;
+  function toast(msg){
+    var t=el("toast"); if(!t) return;
+    t.textContent=msg; t.classList.add("show");
+    clearTimeout(toastTimer); toastTimer=setTimeout(function(){ t.classList.remove("show"); }, 3500);
+  }
+  // 正誤などを読み上げソフトに伝える(画面には出さない)
+  function srSay(msg){ var s=el("sr-live"); if(!s) return; s.textContent=""; setTimeout(function(){ s.textContent=msg; }, 30); }
 
   /* ---- 配色(夜間モード) ---- */
   function prefersDark(){
@@ -887,7 +910,7 @@
     var n=c+w;
     return { c:c, w:w, n:n, rate: n?Math.round(c*100/n):null };
   }
-  function rateText(t){ return t.rate==null ? "—" : t.rate+"% ("+t.n+"問)"; }
+  function rateText(t){ return t.rate==null ? "まだなし" : t.rate+"% ("+t.n+"問)"; }
   // 正解したことのある問題の数(いま読み込めている問題だけ)
   function doneCount(qids){
     var n=0;
@@ -923,7 +946,7 @@
   /* ---- ホーム ---- */
   function renderHome(){
     var all=tally(null);
-    el("home-rate").textContent = all.rate==null ? "—" : all.rate+"%";
+    el("home-rate").textContent = all.rate==null ? "まだなし" : all.rate+"%";
     el("home-total").textContent = all.n;
     var pool=poolQids(null);
     el("home-done").textContent = doneCount(pool)+" / "+pool.length;
@@ -942,7 +965,7 @@
     el("btn-challenge").disabled=(total===0);
     el("btn-browse").disabled=(total===0);
     if(total===0){
-      warn.textContent="問題データが読み込まれていません。www/data/ に q_e1.js 〜 q_j3.js を配置してください。";
+      warn.textContent="問題を読み込めませんでした。いったん閉じて、開き直してください。";
       warn.style.display="block";
     } else {
       warn.style.display="none";
@@ -967,7 +990,7 @@
       var fill=document.createElement("i"); fill.style.width=pct+"%"; bar.appendChild(fill);
       body.appendChild(nm); body.appendChild(sub); body.appendChild(bar);
       var best=document.createElement("span"); best.className="ebest";
-      best.textContent = ready ? (pct+"%") : "—";
+      best.textContent = ready ? (pct+"%") : "-";
       b.appendChild(body); b.appendChild(best);
       if(ready) b.addEventListener("click", function(){ openUnits(tag, browsing); });
       box.appendChild(b);
@@ -1057,9 +1080,10 @@
     if(!current) return;
     renderQuestion();
   }
-  function startReview(){
+  // afterPass=復習をひと回り解き終えたところ。もう間違えた問題が無ければ、ホームで一言知らせる
+  function startReview(afterPass){
     var list=wrongQids();
-    if(!list.length){ goHome(); return; }
+    if(!list.length){ goHome(); if(afterPass) toast("復習の問題は、ぜんぶ できました"); return; }
     mode="review";
     seq=shuffle(list); seqIdx=0;
     current=findQ(seq[0]);
@@ -1068,11 +1092,13 @@
   }
 
   // 図(インラインSVG)。データはビルド時に整形式と禁止要素を検査済み
+  // 図があるときだけキーボードで届く(tabindex)。Enter/Space でも拡大できる(下の配線)
   function renderFig(box, svg){
     box.innerHTML="";
-    if(!svg){ box.classList.remove("show"); return; }
+    if(!svg){ box.classList.remove("show"); box.setAttribute("tabindex","-1"); return; }
     box.innerHTML=svg;
     box.classList.add("show");
+    box.setAttribute("tabindex","0");
   }
   // 表(1行目が見出し)。セルは記法変換済みHTML
   function renderTable(box, rows){
@@ -1125,6 +1151,8 @@
   function isCorrect(q, num){ return num!=null && num===q.answer; }
 
   function onAnswer(num, btn){
+    // 答えたあとは、ほかの選択肢を押しても記録しない(キーボード・読み上げソフトで続けて押したときも)(2026-10-30)
+    if(answered || !current) return;
     var q=current.q, ok=isCorrect(q,num);
     // やさしいモード: 間違えた選択肢は✕を出さずにうすくし、残りからもう一度えらぶ。
     // 記録は1問に1回だけ=最初に間違えた時点で「不正解」として残す(途中でホームへ戻っても復習に入る)
@@ -1138,7 +1166,7 @@
     answered=true;
     if(el("hint-btn")) el("hint-btn").disabled=true;
     var btns=el("q-choices").querySelectorAll(".choice");
-    for(var i=0;i<btns.length;i++){ btns[i].style.pointerEvents="none"; }
+    for(var i=0;i<btns.length;i++){ btns[i].style.pointerEvents="none"; btns[i].setAttribute("aria-disabled","true"); }
 
     // チャレンジは解答を伏せたまま通す。記録は採点時にまとめて。
     if(mode==="challenge"){ picks[current.qid]=num; advanceChallenge(); return; }
@@ -1151,6 +1179,7 @@
       else if(btns[i]!==btn) btns[i].classList.add("dim");
     }
     if(!ok && btn) btn.classList.add("wrong");
+    srSay(ok ? "正解" : "不正解");
     // 色付けの間に ✕ や戻るボタンでホームへ出たら、解説へは進まない(2026-09-30)
     var f=current;
     setTimeout(function(){ if(current===f) toResult(f, num, ok, false); }, REVEAL_MS);
@@ -1188,7 +1217,7 @@
     var line=el("ans-line");
     line.innerHTML="";
     line.appendChild(document.createTextNode("正解: "));
-    var a=document.createElement("span"); a.innerHTML=choiceHtml(q,q.answer)||"—"; line.appendChild(a);
+    var a=document.createElement("span"); a.innerHTML=choiceHtml(q,q.answer)||"-"; line.appendChild(a);
     if(withYours){
       var y=document.createElement("span"); y.className="yours";
       var ph=choiceHtml(q,pick);
@@ -1239,9 +1268,9 @@
   function nextPractice(){
     if(mode==="review"){
       seqIdx++;
-      if(seqIdx>=seq.length){ startReview(); return; }   // 復習デッキは毎回作り直す
+      if(seqIdx>=seq.length){ startReview(true); return; }   // 復習デッキは毎回作り直す
       current=findQ(seq[seqIdx]);
-      if(!current){ startReview(); return; }
+      if(!current){ startReview(true); return; }
       renderQuestion(); return;
     }
     var qid=nextFromDeck(), f=qid&&findQ(qid);
@@ -1572,6 +1601,12 @@
   el("r-fig").addEventListener("click", function(){
     var f = (mode==="browse") ? findQ(browseSeq[browseIdx]) : current;
     if(f) openFig(f.q.figure);
+  });
+  // 図の枠(div)はキーボード・スイッチでも Enter / Space で押せる
+  ["q-fig","r-fig"].forEach(function(id){
+    el(id).addEventListener("keydown", function(e){
+      if(e.key==="Enter" || e.key===" " || e.key==="Spacebar"){ e.preventDefault(); el(id).click(); }
+    });
   });
   // 解説閲覧
   el("browse-home").addEventListener("click", goHome);
