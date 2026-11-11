@@ -147,7 +147,8 @@
   .source{font-size:11.5px; color:var(--ink-soft); line-height:1.7; margin:0 0 8px; text-align:left;}
   .credit{display:inline-block; font-size:11.5px; color:var(--brand-dark); text-decoration:underline;}
   .credit:active{opacity:.6;}
-  .foot-row{display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; margin-top:6px; gap:6px;}
+  /* 文字のボタンを足して、せまい画面では2行に折り返す。行の間を 12px にして、押せる範囲(48px)が上の行のボタンの枠に入らないようにする */
+  .foot-row{display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; margin-top:6px; gap:12px 6px;}
   .foot-right{display:flex; flex-wrap:wrap; justify-content:flex-end; align-items:center; gap:8px;}
   .ver{font-size:11px; color:var(--ink-soft); opacity:.8;}
   .iconbtn.small{width:32px; height:32px; font-size:15px;}
