@@ -9,11 +9,12 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
 <script id="theme-boot">
-/* 配色とふりがな表示は画面が出る前に決める。本体スクリプトは問題データ9本の後ろなので、
+/* 配色とふりがな表示と文字の大きさは画面が出る前に決める。本体スクリプトは問題データ9本の後ろなので、
    ここで立てておかないと夜間モードでも一瞬まぶしい白が出てしまう。 */
 (function(){
-  var t=null, r=null;
-  try{ t=localStorage.getItem("mathtr.theme.v1"); r=localStorage.getItem("mathtr.ruby.v1"); }catch(e){}
+  var t=null, r=null, f=null;
+  try{ t=localStorage.getItem("mathtr.theme.v1"); r=localStorage.getItem("mathtr.ruby.v1"); f=localStorage.getItem("mathtr.fs.v1"); }catch(e){}
+  document.documentElement.dataset.fs=(f==="1"||f==="2")?f:"0";
   if(t!=="dark"&&t!=="light"){
     var m=null;
     try{ m=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)"); }catch(e){}
@@ -92,6 +93,10 @@
     border-radius:50%; font-size:17px; cursor:pointer; box-shadow:var(--shadow-sm); display:grid; place-items:center;
     font-family:inherit;}
   .iconbtn:active{transform:scale(.94);}
+  /* 押せる範囲だけ 48px 以上に広げる(見た目の大きさは変えない・透明な当たり判定)(2026-11-11) */
+  .iconbtn,.linkbtn,.rubybtn{position:relative;}
+  .iconbtn::after,.linkbtn::after,.rubybtn::after{content:""; position:absolute; left:50%; top:50%;
+    width:100%; height:100%; min-width:48px; min-height:48px; transform:translate(-50%,-50%);}
   .pill{display:inline-flex; align-items:center; background:var(--brand-soft); color:var(--brand-dark);
     font-weight:700; padding:5px 13px; border-radius:999px; font-size:14px; white-space:nowrap; max-width:70%;
     overflow:hidden; text-overflow:ellipsis;}
@@ -142,8 +147,8 @@
   .source{font-size:11.5px; color:var(--ink-soft); line-height:1.7; margin:0 0 8px; text-align:left;}
   .credit{display:inline-block; font-size:11.5px; color:var(--brand-dark); text-decoration:underline;}
   .credit:active{opacity:.6;}
-  .foot-row{display:flex; align-items:center; justify-content:space-between; margin-top:6px; gap:6px;}
-  .foot-right{display:flex; align-items:center; gap:8px;}
+  .foot-row{display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; margin-top:6px; gap:6px;}
+  .foot-right{display:flex; flex-wrap:wrap; justify-content:flex-end; align-items:center; gap:8px;}
   .ver{font-size:11px; color:var(--ink-soft); opacity:.8;}
   .iconbtn.small{width:32px; height:32px; font-size:15px;}
   .rubybtn{border:1.5px solid var(--line); background:var(--card); color:var(--ink-soft); border-radius:999px;
@@ -172,6 +177,7 @@
   .lvbar i{display:block; height:100%; background:var(--brand); width:0; border-radius:999px; transition:width .3s;}
   .exam-row.kj .lvbar i{background:var(--accent);}
   .units-top{margin:0 0 14px;}
+  .unit-review{font-size:14px; padding:12px 14px; min-height:48px; margin:-3px 0 0;}
   .units-foot,.browse-foot{margin-top:auto; padding-top:14px; text-align:center;}
 
   /* ============ 出題 ============ */
@@ -264,6 +270,19 @@
   .expl h3{margin:0 0 8px; font-size:14px; color:var(--brand-dark);}
   .expl .body{white-space:pre-wrap; overflow-wrap:anywhere;}
   .result-foot{margin-top:auto; text-align:center;}
+  /* 文字の大きさ(ホームのボタンで ふつう→大→特大)。問題文・選択肢・ヒント・解説・答えの行・問題の再掲だけ大きくする */
+  html[data-fs="1"] .q-text{font-size:20px;}
+  html[data-fs="1"] .choice{font-size:19.5px;}
+  html[data-fs="1"] .hint{font-size:18px;}
+  html[data-fs="1"] .expl{font-size:19.5px;}
+  html[data-fs="1"] .recap{font-size:16px;}
+  html[data-fs="1"] .ans-line{font-size:19px;}
+  html[data-fs="2"] .q-text{font-size:24px;}
+  html[data-fs="2"] .choice{font-size:23px;}
+  html[data-fs="2"] .hint{font-size:21px;}
+  html[data-fs="2"] .expl{font-size:23px;}
+  html[data-fs="2"] .recap{font-size:19px;}
+  html[data-fs="2"] .ans-line{font-size:22px;}
 
   /* ============ 10問チャレンジの採点 ============ */
   .score-big{text-align:center; margin:10px 0 2px; font-weight:800; color:var(--brand);
@@ -297,6 +316,16 @@
     width:100%; max-width:340px; text-align:center; max-height:88vh; overflow-y:auto;}
   .pickbox h2{margin:0 0 4px; font-size:17px; color:var(--brand-dark);}
   .pickbox p{margin:0 0 14px; font-size:12.5px; color:var(--ink-soft);}
+  /* 学習記録の引っ越し(2026-11-11)。文字欄は 16px(iPhone で入力するときに画面が拡大されないように) */
+  #xfer-overlay{display:none; place-items:center;}
+  #xfer-overlay.show{display:grid;}
+  .xferbox{max-width:420px;}
+  .xferbox textarea{display:block; width:100%; margin:0 0 8px; padding:10px; font-family:inherit; font-size:16px;
+    line-height:1.5; color:var(--ink); background:var(--bg1); border:1.5px solid var(--line); border-radius:10px;
+    resize:vertical; overflow-wrap:anywhere; word-break:break-all; text-align:left;}
+  .xferbox .xfer-msg{min-height:1.5em; margin:0 0 10px; font-size:13.5px; font-weight:700; color:var(--brand-dark);}
+  /* 上の「つかいかたを もう一度 見る」や、折り返したときの となりのボタンと、押せる範囲(48px)が重ならない間をとる */
+  .xfer-row{display:flex; flex-wrap:wrap; justify-content:center; gap:12px 14px; margin:12px 0 6px;}
   .pick-item{display:flex; align-items:center; justify-content:space-between; gap:10px; width:100%;
     font-family:inherit; font-weight:800; font-size:15px; color:var(--ink); background:var(--card);
     border:2px solid var(--brand); border-radius:12px; padding:11px 14px; margin-bottom:8px; cursor:pointer;}
@@ -389,13 +418,18 @@
 
     <div class="home-foot">
       <button class="linkbtn" id="guide-btn" type="button">つかいかたを もう一度 見る</button>
+      <div class="xfer-row">
+        <button class="linkbtn" id="export-btn" type="button">記録を コピー</button>
+        <button class="linkbtn" id="import-btn" type="button">記録を 貼り付けて 戻す</button>
+      </div>
       <p class="source">問題と解説は、学習指導要領の内容にそって当団体が独自に作成したものです。学校・教科書会社・検定団体とは関係がありません。学習記録は端末の中だけに保存されます。</p>
       <a class="credit" id="credit-link" href="https://soudansoyogi.com/" target="_blank" rel="noopener noreferrer">アプリ開発: 介護と支援の相談どころ そよぎ</a>
       <div class="foot-row">
         <button class="linkbtn" id="reset-btn">学習記録をリセット</button>
         <div class="foot-right">
+          <button class="rubybtn" id="fs-btn" type="button" title="問題・選択肢・解説の文字の大きさを変える" aria-label="文字の大きさ ふつう。押すと変わります">文字 ふつう</button>
           <button class="rubybtn on" id="ruby-btn" title="小学校の範囲のふりがなを出す/消す" aria-pressed="true">ふりがな あり</button>
-          <span class="ver" id="app-version">v0.2.4</span>
+          <span class="ver" id="app-version">v0.2.5</span>
           <button class="iconbtn small" id="theme-btn" title="夜の色にする" aria-label="配色を切り替える" aria-pressed="false">🌙</button>
         </div>
       </div>
@@ -536,6 +570,18 @@
   </div>
 </div>
 
+<!-- ============ 学習記録の引っ越し(文字にして写す・貼り付けて戻す) ============ -->
+<div class="overlay" id="xfer-overlay" role="dialog" aria-modal="true" aria-labelledby="xfer-title">
+  <div class="pickbox xferbox">
+    <h2 id="xfer-title"></h2>
+    <p id="xfer-desc"></p>
+    <textarea id="xfer-text" rows="6" spellcheck="false" autocomplete="off" autocapitalize="off" aria-label="学習記録の文字"></textarea>
+    <p class="xfer-msg" id="xfer-msg" aria-live="polite"></p>
+    <button class="btn btn-primary" id="xfer-go" type="button"></button>
+    <button class="linkbtn" id="xfer-close" type="button">とじる</button>
+  </div>
+</div>
+
 <!-- 問題データ(9ファイル)。未配置でもJSエラーで死なないよう onerror で数えるだけにする -->
 <script src="data/q_e1.js" onerror="window.MT_MISS=(window.MT_MISS||0)+1"></script>
 <script src="data/q_e2.js" onerror="window.MT_MISS=(window.MT_MISS||0)+1"></script>
@@ -550,10 +596,11 @@
 (function(){
   "use strict";
 
-  var VERSION="0.2.4";
+  var VERSION="0.2.5";
   var STORAGE_KEY="mathtr.save.v1";
   var THEME_KEY="mathtr.theme.v1";                      // 学習記録とは別キー＝リセットでは消えない
   var RUBY_KEY="mathtr.ruby.v1";
+  var FS_KEY="mathtr.fs.v1";                            // 文字の大きさ。学習記録とは別キー
   var EASY_KEY="mathtr.easy.v1";                        // やさしいモード(既定=なし)。学習記録とは別キー
   var THEME_META={ light:"#00897b", dark:"#111a19" };
   var MARKS="①②③④";
@@ -577,7 +624,8 @@
   var DATA=window.MT_DATA||{};
 
   var save={ answers:{}, best:{}, decks:{}, hints:{} };   // hints: qid -> ヒントを見た回数(やさしいモード)
-  var mode=null;        // "unit" | "level" | "challenge" | "review" | "browse"
+  var reviewUnit=null;  // 復習を単元に絞っているときの単元id(全体の復習は null)
+  var mode=null;       // "unit" | "level" | "challenge" | "review" | "browse"
   var deckKey=null;     // 練習デッキの識別 "unit:e3_u01" / "level:e3"
   var seq=[], seqIdx=0; // チャレンジ/復習の出題キュー(qidの配列)
   var current=null;     // {tag,pack,q,qid}
@@ -587,7 +635,7 @@
   var fromScore=false;
   var unitsTag=null;    // 単元一覧に出している段階
   var browseUnit=null, browseSeq=[], browseIdx=0;   // 解説閲覧(学習記録には一切さわらない)
-  var theme="light", rubyOn=true;
+  var theme="light", rubyOn=true, fsLevel=0;
   var easyOn=false;
   var tries=0;                  // やさしいモード: いまの問題で消した選択肢の数
   var hintCut=null, hintShown=0; // やさしいモード: 解説から切り出したヒントと、出した数
@@ -676,6 +724,55 @@
   }
   function setRuby(on){ applyRuby(on); try{ localStorage.setItem(RUBY_KEY, rubyOn?"on":"off"); }catch(e){} }
   function toggleRuby(){ setRuby(!rubyOn); }
+
+  /* ---- 文字の大きさ(0=ふつう 1=大 2=特大・既定はふつう・学習記録とは別キー=リセットでは消えない)(2026-11-11) ---- */
+  var FS_NAMES=["ふつう","大","特大"];
+  function savedFs(){
+    var v=null;
+    try{ v=localStorage.getItem(FS_KEY); }catch(e){}
+    return (v==="1"||v==="2") ? parseInt(v,10) : 0;
+  }
+  function applyFs(n){
+    fsLevel=(n===1||n===2) ? n : 0;
+    var root=document.documentElement;
+    if(root){
+      if(root.dataset) root.dataset.fs=String(fsLevel);
+      else root.setAttribute("data-fs", String(fsLevel));
+    }
+    var b=el("fs-btn");
+    if(b){
+      b.textContent="文字 "+FS_NAMES[fsLevel];
+      b.classList.toggle("on", fsLevel>0);
+      b.setAttribute("aria-label","文字の大きさ "+FS_NAMES[fsLevel]+"。押すと変わります");
+    }
+  }
+  function setFs(n){ applyFs(n); try{ localStorage.setItem(FS_KEY, String(fsLevel)); }catch(e){} }
+  function toggleFs(){ setFs((fsLevel+1)%3); }
+
+  /* ---- ふりがな(rt)を読み上げソフトに二重に読ませない(漢字だけ読ませる)(2026-11-11) ----
+     データの <rt> はそのまま(plainText などが <rt> の形で外している)。画面に描いた rt に aria-hidden を付け、
+     あとから描き足された分も MutationObserver で付ける */
+  function hideRt(root){
+    if(!root || !root.querySelectorAll) return;
+    var list=root.querySelectorAll("rt");
+    for(var i=0;i<list.length;i++){ if(list[i].getAttribute("aria-hidden")!=="true") list[i].setAttribute("aria-hidden","true"); }
+  }
+  function watchRt(){
+    try{
+      hideRt(document);
+      if(typeof MutationObserver!=="function") return;
+      new MutationObserver(function(ms){
+        for(var i=0;i<ms.length;i++){
+          var add=ms[i].addedNodes;
+          for(var j=0;j<add.length;j++){
+            var n=add[j];
+            if(n.nodeType!==1) continue;
+            if(n.tagName==="RT") n.setAttribute("aria-hidden","true"); else hideRt(n);
+          }
+        }
+      }).observe(document.body, {childList:true, subtree:true});
+    }catch(e){}
+  }
 
   /* ---- やさしいモード(既定=なし・練習と復習だけ。10問チャレンジは従来の○✕) ----
      ・まちがえた選択肢は✕を出さずに消し、のこりからもう一度えらぶ
@@ -918,9 +1015,14 @@
     return n;
   }
   // 「最後に解いたとき不正解」かつ、いま読み込めている問題だけ
-  function wrongQids(){
+  // unitId を渡すと、その単元だけ(2026-11-11)
+  function wrongQids(unitId){
     var out=[];
-    for(var qid in save.answers){ if(save.answers[qid] && save.answers[qid].last===0 && findQ(qid)) out.push(qid); }
+    for(var qid in save.answers){
+      if(!(save.answers[qid] && save.answers[qid].last===0)) continue;
+      var f=findQ(qid);
+      if(f && (!unitId || f.q.unit===unitId)) out.push(qid);
+    }
     return out;
   }
   function record(qid, ok){
@@ -1027,13 +1129,22 @@
       var body=document.createElement("div"); body.className="ebody";
       var nm=document.createElement("div"); nm.className="ename"; nm.textContent=u.name||u.id;
       var sub=document.createElement("div"); sub.className="esub";
-      sub.textContent=(u.domain?u.domain+"・":"")+n+"問";
+      // 練習の一覧だけ、その単元で「最後に解いたとき間違えた」問題の数と、そこだけの復習の入口を出す(2026-11-11)
+      var wn=browsing ? 0 : wrongQids(u.id).length;
+      sub.textContent=(u.domain?u.domain+"・":"")+n+"問"+(wn ? "・間違えた問題 "+wn+"件" : "");
       body.appendChild(nm); body.appendChild(sub);
       var best=document.createElement("span"); best.className="ebest";
       best.textContent = n ? ("正解 "+doneCount(pool)+"/"+n) : "準備中";
       b.appendChild(body); b.appendChild(best);
       if(n) b.addEventListener("click", function(){ browsing ? openBrowse(u.id) : startUnit(u.id); });
       box.appendChild(b);
+      if(wn){
+        var rv=document.createElement("button");
+        rv.type="button"; rv.className="btn btn-sub unit-review";
+        rv.textContent="🔁 この単元の間違えた問題を復習 ("+wn+"件)";
+        rv.addEventListener("click", function(){ startReview(false, u.id); });
+        box.appendChild(rv);
+      }
     });
   }
 
@@ -1081,8 +1192,10 @@
     renderQuestion();
   }
   // afterPass=復習をひと回り解き終えたところ。もう間違えた問題が無ければ、ホームで一言知らせる
-  function startReview(afterPass){
-    var list=wrongQids();
+  // unitId=単元の復習(単元の一覧から)。ひと回り終えて作り直すとき(afterPass)は、前と同じ範囲のまま
+  function startReview(afterPass, unitId){
+    if(!afterPass) reviewUnit=unitId||null;
+    var list=wrongQids(reviewUnit);
     if(!list.length){ goHome(); if(afterPass) toast("復習の問題は、ぜんぶ できました"); return; }
     mode="review";
     seq=shuffle(list); seqIdx=0;
@@ -1386,6 +1499,109 @@
     });
   }
 
+  /* ---- 学習記録の引っ越し(文字にして写す・貼り付けて戻す)(2026-11-11) ----
+     ・Capacitor では <a download> が効かないので、クリップボード方式(文字を コピー → 新しい機種で貼り付け)
+     ・端末の中だけで完結する(どこにも送らない)。形は "MATHTR1:" + base64(JSON)。
+       答え(a)=問題ごとの [正解数, 不正解数, 最後の結果]・ベスト(b)・ヒントを見た回数(h)。出題の残りデッキは移さない
+     ・戻すときは形を厳しく確かめ、読めない行は捨てる。確かめの窓のあと、いまの記録と入れ替える */
+  var XFER_PREFIX="MATHTR1:";
+  var RE_QID=/^(e[1-6]|j[1-3])_\d{1,4}$/, RE_BESTKEY=/^ch:(e[1-6]|j[1-3])$/;
+  function xferInt(v, max){ return (typeof v==="number" && isFinite(v) && v>=0 && v<=max && Math.floor(v)===v) ? v : null; }
+  function encodeRecord(){
+    var o={ v:1, a:{}, b:{}, h:{} }, k;
+    for(k in save.answers){
+      var a=save.answers[k];
+      if(!RE_QID.test(k) || !a) continue;
+      var c=xferInt(a.c||0,100000), w=xferInt(a.w||0,100000);
+      if(c==null || w==null) continue;
+      o.a[k]=[c, w, a.last===0 ? 0 : 1];
+    }
+    for(k in save.best){ var bv=xferInt(save.best[k],100); if(RE_BESTKEY.test(k) && bv!=null) o.b[k]=bv; }
+    for(k in save.hints){ var hv=xferInt(save.hints[k],100000); if(RE_QID.test(k) && hv!=null) o.h[k]=hv; }
+    return XFER_PREFIX + btoa(JSON.stringify(o));     // 中身は英数字と記号だけなので btoa でよい
+  }
+  // 読めれば {answers,best,hints,n}、読めなければ null
+  function decodeRecord(text){
+    var s=String(text||"").replace(/\s+/g,"");
+    if(s.indexOf(XFER_PREFIX)!==0) return null;
+    var o=null;
+    try{ o=JSON.parse(atob(s.slice(XFER_PREFIX.length))); }catch(e){ return null; }
+    if(!o || typeof o!=="object" || o.v!==1) return null;
+    var out={ answers:{}, best:{}, hints:{}, n:0 }, k;
+    var A=(o.a&&typeof o.a==="object"&&!Array.isArray(o.a)) ? o.a : {};
+    for(k in A){
+      var r=A[k];
+      if(!RE_QID.test(k) || !Array.isArray(r) || r.length!==3) continue;
+      var c=xferInt(r[0],100000), w=xferInt(r[1],100000);
+      if(c==null || w==null || (r[2]!==0 && r[2]!==1)) continue;
+      out.answers[k]={ c:c, w:w, last:r[2] }; out.n++;
+    }
+    var B=(o.b&&typeof o.b==="object"&&!Array.isArray(o.b)) ? o.b : {};
+    for(k in B){ var bv=xferInt(B[k],100); if(RE_BESTKEY.test(k) && bv!=null) out.best[k]=bv; }
+    var H=(o.h&&typeof o.h==="object"&&!Array.isArray(o.h)) ? o.h : {};
+    for(k in H){ var hv=xferInt(H[k],100000); if(RE_QID.test(k) && hv!=null) out.hints[k]=hv; }
+    return out;
+  }
+  function copyText(text, done){
+    function fallback(){
+      var ok=false;
+      try{
+        var ta=el("xfer-text"); ta.focus(); ta.select();
+        if(ta.setSelectionRange) ta.setSelectionRange(0, text.length);
+        ok=!!document.execCommand("copy");
+      }catch(e){ ok=false; }
+      done(ok);
+    }
+    try{
+      if(navigator.clipboard && navigator.clipboard.writeText){
+        navigator.clipboard.writeText(text).then(function(){ done(true); }, fallback);
+        return;
+      }
+    }catch(e){}
+    fallback();
+  }
+  var xferMode=null;
+  function xferSay(msg){ el("xfer-msg").textContent=msg; srSay(msg); }
+  function openXfer(m){
+    xferMode=m;
+    var ta=el("xfer-text");
+    el("xfer-msg").textContent="";
+    if(m==="export"){
+      el("xfer-title").textContent="学習記録を コピー";
+      el("xfer-desc").textContent="下の文字が、いまの学習記録です。「文字を コピーする」を押して、メモなどに貼り付けて取っておいてください。新しい機種では「記録を 貼り付けて 戻す」で戻せます。この文字は、どこにも送られません。";
+      ta.value=encodeRecord(); ta.readOnly=true;
+      el("xfer-go").textContent="文字を コピーする";
+    } else {
+      el("xfer-title").textContent="記録を 貼り付けて 戻す";
+      el("xfer-desc").textContent="コピーしておいた文字を、下に貼り付けてください。「記録を 戻す」を押すと、いまの記録は、貼り付けた記録に入れ替わります。";
+      ta.value=""; ta.readOnly=false;
+      el("xfer-go").textContent="記録を 戻す";
+    }
+    el("xfer-overlay").classList.add("show");
+  }
+  function closeXfer(){ el("xfer-overlay").classList.remove("show"); xferMode=null; }
+  function importRecord(text){
+    var r=decodeRecord(text);
+    if(!r){ xferSay("この文字は 読めませんでした。「記録を コピー」でコピーした文字を、すべて貼り付けてください。"); return false; }
+    askBox("いまの学習記録を、貼り付けた記録に入れ替えます(解いた問題 "+r.n+"問分)。よろしいですか?", function(ok){
+      if(!ok) return;
+      save={ answers:r.answers, best:r.best, decks:{}, hints:r.hints };
+      persist(); renderHome(); closeXfer();
+      toast("学習記録を 戻しました");
+    });
+    return true;
+  }
+  function xferGo(){
+    if(xferMode==="export"){
+      var text=el("xfer-text").value;
+      copyText(text, function(ok){
+        xferSay(ok ? "コピーしました。メモなどに貼り付けて取っておいてください。" : "コピーできませんでした。上の文字を長押しして、すべて選んでコピーしてください。");
+      });
+    } else if(xferMode==="import"){
+      importRecord(el("xfer-text").value);
+    }
+  }
+
   /* ---- Play版(Android)の戻るボタンと確かめの窓(2026-09-30) ----
      ・Capacitor の WebView は戻るボタンを受け取らない(@capacitor/app が無いと、戻る=アプリごと後ろに下がる)。
        Play版(isNativePlatform)だけ Capacitor.Plugins.App の backButton を受け取る(registerPlugin は WebView に無い)。
@@ -1456,6 +1672,7 @@
     if(guideOpen){ guideOpen.back(); return; }
     if(el("fig-overlay").classList.contains("show")){ closeFig(); return; }
     if(el("pick-overlay").classList.contains("show")){ closePick(); return; }
+    if(el("xfer-overlay").classList.contains("show")){ closeXfer(); return; }
     var cur=activeScreen();
     if(cur==="quiz" && el("calc").classList.contains("show")){ toggleCalc(); return; }
     if(cur==="result"){
@@ -1492,7 +1709,7 @@
       "解説だけを読む",
       "やさしいモード",
       "記録は この端末の中だけ",
-      "ふりがなと夜の色"
+      "ふりがな・文字の大きさ・夜の色"
     ],
     bodies:[
       "小学校の算数(1年〜6年)と中学校の数学(1年〜3年)を、4択の問題と解説で学び直すアプリです。\n9つの段階の、どこからでも始められます。\n問題と解説は、学習指導要領の内容にそって当団体が独自に作ったものです。学校・教科書会社・検定団体とは関係がありません。",
@@ -1501,8 +1718,8 @@
       "「🎲 10問チャレンジ」は、段階をえらぶと その範囲から10問を続けて出し、最後にまとめて答え合わせをします。\n答え合わせの画面で番号のマスを押すと、その問題の解説を読めます。いちばん良かった点は「ベスト」として残ります。\n途中で「✕」を押すと中断でき、その回の答えは記録されません。\n間違えた問題は「🔁 間違えた問題を復習」で、もう一度解けます(最後に解いたときに間違えた問題が出ます)。",
       "「📖 解説を読む」では、段階と単元をえらぶと問題の一覧が出て、問題を押すと その解説を読めます。\n「前の問題」「次の問題」で順に読めます。\nここで読んでも、学習記録は変わりません。",
       "ホームの「やさしいモード なし」を押すと「やさしいモード あり」になります。\n練習と復習で、間違えた選択肢がうすくなり、残りから もう一度えらべます(正答率では不正解として数え、復習にも出てきます)。\n「💡 ヒント」で解説のポイントと手順を1つずつ見られ、「🔢 電卓」も使えます。\n10問チャレンジは、いつもどおりです。",
-      "学習記録(正答率・ベスト・復習する問題など)は、この端末の中だけに保存され、どこにも送られません。登録もいりません。\nホームのいちばん下の「学習記録をリセット」で、記録をすべて消せます(消す前に確かめます)。\n機種を変えるときに、記録を移すしくみはありません。",
-      "ホームのいちばん下の「ふりがな あり」を押すと、小学校の範囲のふりがなを消せます。もう一度押すと出ます。\n🌙 を押すと夜の色、☀️ を押すと昼の色になります。\nこの案内は、ホームの下のほうの「つかいかたを もう一度 見る」で、いつでも見られます。"
+      "学習記録(正答率・ベスト・復習する問題など)は、この端末の中だけに保存され、どこにも送られません。登録もいりません。\nホームのいちばん下の「学習記録をリセット」で、記録をすべて消せます(消す前に確かめます)。\n機種を変えるときは、ホームの「記録を コピー」で記録を文字にしてメモなどに取っておき、新しい機種の「記録を 貼り付けて 戻す」で戻せます。",
+      "ホームのいちばん下の「ふりがな あり」を押すと、小学校の範囲のふりがなを消せます。もう一度押すと出ます。\n「文字 ふつう」を押すと、問題や解説の文字が大きくなります(大、特大)。押すたびに変わります。\n🌙 を押すと夜の色、☀️ を押すと昼の色になります。\nこの案内は、ホームの下のほうの「つかいかたを もう一度 見る」で、いつでも見られます。"
     ]
   };
   var guideOpen=null;   // 出している案内({back:戻るボタン1回, page:いまのページ})
@@ -1562,9 +1779,15 @@
     mode="browse"; renderLevels(); show("levels");
   });
   el("reset-btn").addEventListener("click", resetProgress);
+  el("export-btn").addEventListener("click", function(){ openXfer("export"); });
+  el("import-btn").addEventListener("click", function(){ openXfer("import"); });
+  el("xfer-go").addEventListener("click", xferGo);
+  el("xfer-close").addEventListener("click", closeXfer);
+  el("xfer-overlay").addEventListener("click", function(e){ if(e.target===el("xfer-overlay")) closeXfer(); });
   el("guide-btn").addEventListener("click", function(){ openGuide(false); });
   el("theme-btn").addEventListener("click", toggleTheme);
   el("ruby-btn").addEventListener("click", toggleRuby);
+  el("fs-btn").addEventListener("click", toggleFs);
   el("easy-btn").addEventListener("click", toggleEasy);
   el("hint-btn").addEventListener("click", showHint);
   el("calc-btn").addEventListener("click", toggleCalc);
@@ -1619,6 +1842,8 @@
   el("app-version").textContent="v"+VERSION;
   applyTheme(savedTheme() || (prefersDark()?"dark":"light"));
   applyRuby(savedRuby());
+  applyFs(savedFs());
+  watchRt();
   applyEasy(savedEasy());
   setResultFoot(false);
   load(); renderHome(); show("home");
@@ -1636,13 +1861,14 @@
     startUnit:startUnit, startLevel:startLevel, startChallenge:startChallenge, startReview:startReview,
     onAnswer:onAnswer, toResult:toResult, nextPractice:nextPractice, renderScore:renderScore,
     openBrowse:openBrowse, renderBrowseList:renderBrowseList, showBrowse:showBrowse, plainHead:plainHead,
-    setTheme:setTheme, toggleTheme:toggleTheme, setRuby:setRuby, toggleRuby:toggleRuby,
+    setTheme:setTheme, toggleTheme:toggleTheme, setRuby:setRuby, toggleRuby:toggleRuby, setFs:setFs, toggleFs:toggleFs, hideRt:hideRt,
     openPick:openPick, closePick:closePick, openFig:openFig, closeFig:closeFig,
     poolQids:poolQids, wrongQids:wrongQids, allTags:allTags, findQ:findQ, tally:tally, doneCount:doneCount,
     kindOfTag:kindOfTag, unitName:unitName, unitsOf:unitsOf, markOf:markOf,
     setEasy:setEasy, toggleEasy:toggleEasy, cutHints:cutHints, showHint:showHint, hintTotal:hintTotal,
     calcEval:calcEval, calcPress:calcPress, toggleCalc:toggleCalc,
     openGuide:openGuide, guideDone:guideDone, GUIDE:GUIDE,
+    encodeRecord:encodeRecord, decodeRecord:decodeRecord, openXfer:openXfer, closeXfer:closeXfer, importRecord:importRecord,
     peek:function(){ return { guide:(guideOpen ? guideOpen.page() : -1), mode:mode, seq:seq, seqIdx:seqIdx, current:current, order:order, picks:picks,
       lastScore:lastScore, save:save, deckKey:deckKey, fromScore:fromScore, chTag:chTag, unitsTag:unitsTag,
       browseUnit:browseUnit, browseSeq:browseSeq, browseIdx:browseIdx, theme:theme, rubyOn:rubyOn,
